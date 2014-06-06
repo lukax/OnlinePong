@@ -51,4 +51,18 @@ public class BallController : MonoBehaviour {
         rigidbody2D.AddForce(direction * force);
     }
 
+    void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo info)
+    {
+        if (stream.isWriting)
+        {
+            Vector3 position = transform.position;
+            stream.Serialize(ref position);
+        }
+        else
+        {
+            Vector3 position = Vector3.zero;
+            stream.Serialize(ref position);
+            transform.position = position;
+        }
+    }
 }

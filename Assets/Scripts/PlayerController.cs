@@ -2,7 +2,8 @@
 using System.Collections;
 
 public class PlayerController : MonoBehaviour {
-	public string axis = "";
+    [Range(1, 10)]
+    public float Velocity = 5;
 
     public Rigidbody2D PlayerA;
     public Rigidbody2D PlayerB;
@@ -13,29 +14,20 @@ public class PlayerController : MonoBehaviour {
 	
 	void Update () 
     {
-        var X = Input.acceleration.x;
-        var Y = Input.acceleration.y;
+        var A = Input.GetAxis("VerticalA");
 
-        Rigidbody2D currPlayer = PlayerA;
-
-        if (X < 0)
-        {
-            currPlayer = PlayerA;
-            PlayerB.velocity = Vector2.zero;
-        }
-        else if (X > 0)
-        {
-            currPlayer = PlayerB;
-            PlayerA.velocity = Vector2.zero;
-        }
-
-        if (Y > 0 && !isCollidingWith(currPlayer, "TopWall") ||
-            Y < 0 && !isCollidingWith(currPlayer, "BotWall"))
-            currPlayer.velocity = Vector2.up * 5 * Y;
-        else
-            currPlayer.velocity = Vector2.zero;
+        MovePlayer(PlayerA, A);
 	}
 
+    void MovePlayer(Rigidbody2D player, float axis)
+    {
+        if (axis > 0 && !isCollidingWith(player, "TopWall") ||
+            axis < 0 && !isCollidingWith(player, "BotWall"))
+            player.velocity = Vector2.up * Velocity * axis;
+        else
+            player.velocity = Vector2.zero;
+    }
+    
     bool isCollidingWith(Rigidbody2D thisBody, string targetTag)
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(thisBody.transform.position, 1f);
@@ -48,5 +40,21 @@ public class PlayerController : MonoBehaviour {
             }
         }
         return false;
+    }
+
+    void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo info)
+    {
+        if (stream.isWriting)
+        {
+            float YPos = PlayerA.transform.position.y;
+            stream.Serialize(ref YPos);
+        }
+        else
+        {
+            float YPos = 0;
+            stream.Serialize(ref YPos);
+            Debug.Log(YPos);
+            PlayerB.transform.position = new Vector3(PlayerB.transform.position.x, YPos, PlayerB.transform.position.z);
+        }
     }
 }
